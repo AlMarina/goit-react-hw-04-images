@@ -38,7 +38,7 @@ export const App = () => {
           PER_PAGE
         );
 
-        setImg(prevState => [prevState, ...hits]);
+        setImg(prevState => [...prevState, ...hits]);
         setTotalImg(totalHits);
 
         if (page === 1)
