@@ -1,4 +1,4 @@
-import { Component } from 'react';
+import { useState } from 'react';
 import {
   ButtonSerch,
   FormSerch,
@@ -8,20 +8,16 @@ import {
 import { BsSearch } from 'react-icons/bs';
 import toast from 'react-hot-toast';
 
-export class Searchbar extends Component {
-  state = {
-    name: '',
+export const Searchbar = ({ onSubmit }) => {
+  const [name, setName] = useState('');
+
+  const onChangeInput = evt => {
+    setName(evt.target.value.trim().toLowerCase());
   };
 
-  onChangeInput = evt => {
-    this.setState({
-      name: evt.target.value.trim().toLowerCase(),
-    });
-  };
-
-  submitForm = evt => {
+  const submitForm = evt => {
     evt.preventDefault();
-    if (this.state.name.trim() === '')
+    if (name.trim() === '')
       return toast('Can not be empty!', {
         icon: '☝',
         style: {
@@ -31,32 +27,29 @@ export class Searchbar extends Component {
           fontWeight: 700,
         },
       });
-
-    this.props.onSubmit(this.state.name);
-    this.setState({ name: '' });
+    onSubmit(name);
+    setName('');
   };
 
-  render() {
-    return (
-      <HeaderSerch>
-        <FormSerch onSubmit={this.submitForm}>
-          <ButtonSerch type="submit">
-            <span>
-              <BsSearch />
-            </span>
-          </ButtonSerch>
+  return (
+    <HeaderSerch>
+      <FormSerch onSubmit={submitForm}>
+        <ButtonSerch type="submit">
+          <span>
+            <BsSearch />
+          </span>
+        </ButtonSerch>
 
-          <InputSerch
-            type="text"
-            autoComplete="off"
-            autoFocus
-            placeholder="Search images and photos"
-            onChange={this.onChangeInput}
-            name="name"
-            value={this.state.name}
-          />
-        </FormSerch>
-      </HeaderSerch>
-    );
-  }
-}
+        <InputSerch
+          type="text"
+          autoComplete="off"
+          autoFocus
+          placeholder="Search images and photos"
+          onChange={onChangeInput}
+          name="name"
+          value={name}
+        />
+      </FormSerch>
+    </HeaderSerch>
+  );
+};

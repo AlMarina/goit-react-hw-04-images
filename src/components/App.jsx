@@ -1,4 +1,4 @@
-import { Component } from 'react';
+import { useEffect, useState } from 'react';
 import { Modal } from './Modal/Modal';
 import { Searchbar } from './Searchbar/Searchbar';
 import { fetchSerch } from '../api';
@@ -10,40 +10,38 @@ import toast, { Toaster } from 'react-hot-toast';
 
 const PER_PAGE = 12;
 
-export class App extends Component {
-  state = {
-    name: '',
-    page: 1,
-    totalImg: 0,
-    img: [],
-    error: false,
-    isLoading: false,
-    showModal: false,
-    modalData: '',
-  };
+export const App = () => {
+  const [name, setName] = useState('');
+  const [page, setPage] = useState(1);
+  const [totalImg, setTotalImg] = useState(0);
+  const [img, setImg] = useState([]);
+  const [error, setError] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [showModal, setShowModal] = useState(false);
+  const [modalData, setModalData] = useState({ img: '', alt: '' });
 
-  async componentDidUpdate(_, prevState) {
-    if (
-      prevState.name !== this.state.name ||
-      prevState.page !== this.state.page
-    )
+  useEffect(() => {
+    if (!name) {
+      return;
+    }
+    async function getName() {
       try {
-        this.setState({ isLoading: true, error: false });
+        setIsLoading(true);
+        setError(false);
 
-        const idx = this.state.name.indexOf('/');
-        const clearSearchName = this.state.name.slice(idx + 1);
+        const idx = name.indexOf('/');
+        const clearSearchName = name.slice(idx + 1);
 
         const { hits, totalHits } = await fetchSerch(
           clearSearchName,
-          this.state.page,
+          page,
           PER_PAGE
         );
 
-        this.setState(prevState => ({
-          img: [...prevState.img, ...hits],
-          totalImg: totalHits,
-        }));
-        if (this.state.page === 1)
+        setImg(prevState => [prevState, ...hits]);
+        setTotalImg(totalHits);
+
+        if (page === 1)
           toast.success('Yes! We found image!', {
             style: {
               border: '1px solid #713200',
@@ -53,7 +51,8 @@ export class App extends Component {
             },
           });
       } catch (error) {
-        this.setState({ error: error.message });
+        setError(error.message);
+
         toast.error('Ooops, there was an error...', {
           style: {
             border: '1px solid #713200',
@@ -63,48 +62,50 @@ export class App extends Component {
           },
         });
       } finally {
-        this.setState({ isLoading: false });
+        setIsLoading(false);
       }
-  }
+    }
+    getName();
+  }, [name, page]);
 
-  onSubmit = name => {
-    this.setState({ name: `${Date.now()}/${name}`, page: 1, img: [] });
+  const onSubmit = name => {
+    setName(`${Date.now()}/${name}`);
+    setPage(1);
+    setImg([]);
   };
 
-  onClickLoad = () => {
-    this.setState(prevState => ({ page: prevState.page + 1 }));
+  const onClickLoad = () => {
+    setPage(prevState => prevState + 1);
   };
 
-  handleOpenModal = (largeImageURL, tags) => {
-    this.setState({ showModal: true, modalData: { img: largeImageURL, tags } });
+  const handleOpenModal = (largeImageURL, tags) => {
+    setShowModal(true);
+    setModalData({ img: largeImageURL, alt: tags });
   };
 
-  handleCloseModal = () => {
-    this.setState({ showModal: false });
+  const handleCloseModal = () => {
+    setShowModal(false);
   };
 
-  render() {
-    const { isLoading, img, name, page, showModal, modalData, totalImg } =
-      this.state;
+  const quantityPages = Math.ceil(totalImg / PER_PAGE);
 
-    const quantityPages = Math.ceil(totalImg / PER_PAGE);
+  return (
+    <ContainerApp>
+      <Searchbar onSubmit={onSubmit} />
+      {isLoading && <Loader />}
 
-    return (
-      <ContainerApp>
-        <Searchbar onSubmit={this.onSubmit} />
-        {isLoading && <Loader />}
+      {error && <p>Sorry, we have, some error. Error: {error}</p>}
+      <ImageGallery items={img} onClick={handleOpenModal} />
 
-        <ImageGallery items={img} onClick={this.handleOpenModal} />
-        {name && page < quantityPages && <Button click={this.onClickLoad} />}
-        {showModal && (
-          <Modal
-            onclose={this.handleCloseModal}
-            img={modalData.img}
-            alt={modalData.tags}
-          />
-        )}
-        <Toaster />
-      </ContainerApp>
-    );
-  }
-}
+      {name && page < quantityPages && <Button click={onClickLoad} />}
+      {showModal && (
+        <Modal
+          onclose={handleCloseModal}
+          img={modalData.img}
+          alt={modalData.alt}
+        />
+      )}
+      <Toaster />
+    </ContainerApp>
+  );
+};
